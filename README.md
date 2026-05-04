@@ -164,6 +164,30 @@ Notes:
 - Each client keeps its own scheduler and synthesis engine.
 - Convergence happens on-device from incoming peer beat events.
 
+## Deploying to Render
+
+The repo includes a `render.yaml` that configures everything automatically.
+
+1. Push your repo to GitHub.
+2. Go to [render.com](https://render.com) and create a new account (or log in).
+3. Click **New → Blueprint** and connect your GitHub repo.
+   Render will detect `render.yaml` and pre-fill all settings.
+4. Click **Apply** and wait for the build to finish.
+5. Open the generated `.onrender.com` URL on any device.
+
+Alternatively, via **New → Web Service** (manual):
+
+| Setting | Value |
+|---|---|
+| Runtime | Node |
+| Build Command | `npm install` |
+| Start Command | `npm start` |
+| Instance Type | Free (or Starter for always-on) |
+
+Render injects `PORT` automatically; your server already reads `process.env.PORT`.
+
+> **Note:** The free tier spins down after inactivity. Use a Starter instance for a persistent room server.
+
 ## Deployment Notes
 
 - The app uses WebSockets, so your host/proxy must support WebSocket upgrade requests.

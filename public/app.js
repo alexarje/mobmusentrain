@@ -60,10 +60,53 @@
       snr:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
       ton:  [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0],
     },
+    {
+      name: 'Kpanlogo',
+      // Ghanaian youth dance — asymmetric djembe-based 4/4 pattern
+      kick: [1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,0],
+      hat:  [1,0,1,1, 0,1,0,1, 1,0,1,0, 1,0,1,0],
+      snr:  [0,0,0,0, 1,0,0,0, 0,0,1,0, 0,0,1,0],
+      ton:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      voices: { kick: 'djembeBass', hat: 'shaker', snr: 'djembeSlap', ton: 'ton' },
+    },
+    {
+      name: 'Fanga',
+      // West African welcome ceremony rhythm
+      kick: [1,0,0,0, 1,0,1,0, 0,0,1,0, 1,0,0,0],
+      hat:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+      snr:  [0,0,1,0, 0,0,0,1, 0,0,1,0, 0,1,0,0],
+      ton:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      voices: { kick: 'djembeBass', hat: 'shaker', snr: 'djembeSlap', ton: 'ton' },
+    },
+    {
+      name: 'Keherwa',
+      // North Indian 8-beat taal (Dha Ge Na Ti | Na Ka Dhi Na), 2 steps per beat
+      kick: [1,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0],
+      hat:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+      snr:  [1,0,1,0, 1,0,1,0, 0,0,1,0, 1,0,1,0],
+      ton:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      voices: { kick: 'tablaBayan', hat: 'kanjira', snr: 'tablaDayan', ton: 'ton' },
+    },
+    {
+      name: 'Rupak',
+      // North Indian 7-beat taal (3+2+2), adapted to 16 steps (14 active + 2 rest)
+      kick: [0,0,0,0, 0,0,1,0, 1,0,1,0, 1,0,0,0],
+      hat:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,0,0],
+      snr:  [1,0,1,0, 1,0,1,0, 0,0,1,0, 0,0,0,0],
+      ton:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      voices: { kick: 'tablaBayan', hat: 'kanjira', snr: 'tablaDayan', ton: 'ton' },
+    },
   ];
 
   // A-minor pentatonic (A3–A4 range), used for tone hits
   const PENTATONIC = [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+
+  // Sequencer row labels keyed by voice name
+  const VOICE_LABELS = {
+    kick: 'KICK', hat: 'HAT',  snr: 'SNR',  ton: 'TONE',
+    djembeBass: 'DJMB', djembeSlap: 'SLAP', shaker: 'SHKR',
+    tablaBayan: 'BYAN', tablaDayan: 'DYAN', kanjira: 'KANJ',
+  };
 
   // ──────────────────────────────────────────────────────────────────────────
   // GLOBAL STATE
@@ -297,6 +340,183 @@
     });
   }
 
+  /** Djembe bass — warm low tone, fast attack, medium decay */
+  function playDjembeBass(time, vel = 0.85) {
+    const osc = audioCtx.createOscillator();
+    osc.type  = 'sine';
+    const env = audioCtx.createGain();
+    osc.frequency.setValueAtTime(180, time);
+    osc.frequency.exponentialRampToValueAtTime(68, time + 0.04);
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(vel * 0.9, time + 0.004);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
+    osc.connect(env);
+    env.connect(compressor);
+    osc.start(time);
+    osc.stop(time + 0.32);
+
+    // Body thud — bandpass noise burst
+    const noise = makeNoise(0.015);
+    const bp    = audioCtx.createBiquadFilter();
+    bp.type     = 'bandpass';
+    bp.frequency.value = 260;
+    bp.Q.value  = 1.4;
+    const nEnv  = audioCtx.createGain();
+    nEnv.gain.setValueAtTime(vel * 0.35, time);
+    nEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.018);
+    noise.connect(bp);
+    bp.connect(nEnv);
+    nEnv.connect(compressor);
+    noise.start(time);
+    noise.stop(time + 0.02);
+  }
+
+  /** Djembe slap — bright sharp mid-high finger strike */
+  function playDjembeSlap(time, vel = 0.7) {
+    const osc = audioCtx.createOscillator();
+    osc.type  = 'triangle';
+    const env = audioCtx.createGain();
+    osc.frequency.setValueAtTime(520, time);
+    osc.frequency.exponentialRampToValueAtTime(320, time + 0.025);
+    env.gain.setValueAtTime(vel * 0.6, time);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.09);
+    osc.connect(env);
+    env.connect(compressor);
+    osc.start(time);
+    osc.stop(time + 0.1);
+
+    const noise = makeNoise(0.06);
+    const hp    = audioCtx.createBiquadFilter();
+    hp.type     = 'highpass';
+    hp.frequency.value = 1200;
+    const nEnv  = audioCtx.createGain();
+    nEnv.gain.setValueAtTime(vel * 0.5, time);
+    nEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+    noise.connect(hp);
+    hp.connect(nEnv);
+    nEnv.connect(compressor);
+    noise.start(time);
+    noise.stop(time + 0.065);
+  }
+
+  /** Shaker / shekere — rattling bandpass noise */
+  function playShaker(time, vel = 0.45) {
+    const noise = makeNoise(0.08);
+    const bp    = audioCtx.createBiquadFilter();
+    bp.type     = 'bandpass';
+    bp.frequency.value = 6000;
+    bp.Q.value  = 0.7;
+    const hp    = audioCtx.createBiquadFilter();
+    hp.type     = 'highpass';
+    hp.frequency.value = 4000;
+    const env   = audioCtx.createGain();
+    env.gain.setValueAtTime(vel, time);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.07);
+    noise.connect(bp);
+    bp.connect(hp);
+    hp.connect(env);
+    env.connect(compressor);
+    noise.start(time);
+    noise.stop(time + 0.08);
+  }
+
+  /** Tabla bayan — Indian bass drum, low pitched with resonant pitch glide */
+  function playTablaBayan(time, vel = 0.85) {
+    const osc = audioCtx.createOscillator();
+    osc.type  = 'sine';
+    const env = audioCtx.createGain();
+    osc.frequency.setValueAtTime(110, time);
+    osc.frequency.exponentialRampToValueAtTime(52, time + 0.08);
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(vel * 0.88, time + 0.005);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.32);
+    osc.connect(env);
+    env.connect(compressor);
+    if (reverbSend) env.connect(reverbSend);
+    osc.start(time);
+    osc.stop(time + 0.36);
+  }
+
+  /** Tabla dayan — Indian treble drum, bright ring with inharmonic overtones */
+  function playTablaDayan(time, vel = 0.65) {
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(vel, time + 0.003);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+    env.connect(compressor);
+
+    // Three partials — inharmonic spacing gives the characteristic tabla ring
+    [[440, 1.0], [585, 0.45], [880, 0.2]].forEach(([freq, amp]) => {
+      const o = audioCtx.createOscillator();
+      o.type  = 'sine';
+      o.frequency.setValueAtTime(freq, time);
+      o.frequency.exponentialRampToValueAtTime(freq * 0.94, time + 0.06);
+      const g = audioCtx.createGain();
+      g.gain.value = amp;
+      o.connect(g);
+      g.connect(env);
+      o.start(time);
+      o.stop(time + 0.2);
+    });
+
+    // Attack transient
+    const click = makeNoise(0.006);
+    const bp    = audioCtx.createBiquadFilter();
+    bp.type     = 'bandpass';
+    bp.frequency.value = 900;
+    bp.Q.value  = 1.8;
+    const cEnv  = audioCtx.createGain();
+    cEnv.gain.setValueAtTime(vel * 0.4, time);
+    cEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.008);
+    click.connect(bp);
+    bp.connect(cEnv);
+    cEnv.connect(compressor);
+    click.start(time);
+    click.stop(time + 0.01);
+  }
+
+  /** Kanjira — small South Indian frame drum, very short and crisp */
+  function playKanjira(time, vel = 0.55) {
+    const osc = audioCtx.createOscillator();
+    osc.type  = 'triangle';
+    const env = audioCtx.createGain();
+    osc.frequency.setValueAtTime(260, time);
+    osc.frequency.exponentialRampToValueAtTime(190, time + 0.018);
+    env.gain.setValueAtTime(vel * 0.55, time);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+    osc.connect(env);
+    env.connect(compressor);
+    osc.start(time);
+    osc.stop(time + 0.06);
+
+    const noise = makeNoise(0.04);
+    const hp    = audioCtx.createBiquadFilter();
+    hp.type     = 'highpass';
+    hp.frequency.value = 2800;
+    const nEnv  = audioCtx.createGain();
+    nEnv.gain.setValueAtTime(vel * 0.38, time);
+    nEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.038);
+    noise.connect(hp);
+    hp.connect(nEnv);
+    nEnv.connect(compressor);
+    noise.start(time);
+    noise.stop(time + 0.04);
+  }
+
+  // Dispatch map: voice name → (time, step) → plays the right instrument
+  const VOICE_FNS = {
+    kick:       (t, s) => playKick(t),
+    hat:        (t, s) => playHat(t, 0.52, s === 6 || s === 14),
+    snr:        (t, s) => playSnare(t),
+    ton:        (t, s) => playTone(t, 0.38, Math.floor(s / 2) % PENTATONIC.length),
+    djembeBass: (t, s) => playDjembeBass(t),
+    djembeSlap: (t, s) => playDjembeSlap(t),
+    shaker:     (t, s) => playShaker(t),
+    tablaBayan: (t, s) => playTablaBayan(t),
+    tablaDayan: (t, s) => playTablaDayan(t),
+    kanjira:    (t, s) => playKanjira(t),
+  };
+
   // ──────────────────────────────────────────────────────────────────────────
   // SCHEDULER (Web Audio clock-based lookahead)
   // ──────────────────────────────────────────────────────────────────────────
@@ -307,10 +527,11 @@
 
   function scheduleStep(step, time) {
     const p = currentPattern;
-    if (p.kick[step]) playKick(time);
-    if (p.hat[step])  playHat(time, 0.52, step === 6 || step === 14);
-    if (p.snr[step])  playSnare(time);
-    if (p.ton[step])  playTone(time, 0.38, Math.floor(step / 2) % PENTATONIC.length);
+    const v = p.voices || {};
+    if (p.kick[step]) VOICE_FNS[v.kick || 'kick'](time, step);
+    if (p.hat[step])  VOICE_FNS[v.hat  || 'hat' ](time, step);
+    if (p.snr[step])  VOICE_FNS[v.snr  || 'snr' ](time, step);
+    if (p.ton[step])  VOICE_FNS[v.ton  || 'ton' ](time, step);
 
     // On the downbeat (step 0) — record wall time and broadcast beat
     if (step === 0) {
@@ -638,11 +859,12 @@
     if (!grid) return;
     grid.innerHTML = '';
 
+    const voices = currentPattern.voices || {};
     const rows = [
-      { key: 'kick', label: 'KICK' },
-      { key: 'hat',  label: 'HAT'  },
-      { key: 'snr',  label: 'SNR'  },
-      { key: 'ton',  label: 'TONE' },
+      { key: 'kick', label: VOICE_LABELS[voices.kick || 'kick'] },
+      { key: 'hat',  label: VOICE_LABELS[voices.hat  || 'hat' ] },
+      { key: 'snr',  label: VOICE_LABELS[voices.snr  || 'snr' ] },
+      { key: 'ton',  label: VOICE_LABELS[voices.ton  || 'ton' ] },
     ];
 
     rows.forEach(({ key, label }) => {
