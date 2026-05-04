@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0d0d14">
+  <title>MobMusEntrain</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ─────────────────────────────────── -->
+  <div class="header">
+    <span class="app-title">MobMusEntrain</span>
+    <span id="connection-status" class="conn-status">○ Offline</span>
+  </div>
+
+  <!-- ── Room join ───────────────────────────────── -->
+  <div class="room-panel">
+    <input
+      type="text"
+      id="room-input"
+      placeholder="room code"
+      maxlength="12"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    >
+    <button id="join-btn" class="btn">JOIN</button>
+  </div>
+
+  <!-- ── Phase clock (canvas) ────────────────────── -->
+  <div class="viz-panel">
+    <canvas id="phase-canvas"></canvas>
+    <div class="info-row">
+      <div id="bpm-display" class="bpm-num">— BPM</div>
+      <div id="peers-display" class="peers-num">0 peers</div>
+    </div>
+  </div>
+
+  <!-- ── Main play button ────────────────────────── -->
+  <button id="play-btn">START</button>
+
+  <!-- ── Pattern presets ─────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Pattern</div>
+    <div id="preset-buttons" class="preset-row"></div>
+  </div>
+
+  <!-- ── Step sequencer ──────────────────────────── -->
+  <div id="sequencer-grid" class="seq-grid"></div>
+
+  <!-- ── Share link (shown after joining a room) ─── -->
+  <div id="share-section" class="share-section" style="display:none">
+    <div class="section-label">Share room link</div>
+    <a id="share-link" href="#" class="share-link"></a>
+  </div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
